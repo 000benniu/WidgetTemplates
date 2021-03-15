@@ -1,0 +1,138 @@
+<#assign journalArticleLocalService = serviceLocator.findService("com.liferay.journal.service.JournalArticleLocalService") />
+
+<#function value_of docXml field language_id>
+  <#local default_language_id = docXml.valueOf("/root/@default-locale") />
+  <#local value = docXml.valueOf("//dynamic-element[@name='" + field + "']/dynamic-content[@language-id='"+ language_id + "']/text()") />
+  <#if !value?has_content>
+    <#local value = docXml.valueOf("//dynamic-element[@name='" + field + "']/dynamic-content[@language-id='"+ default_language_id + "']/text()") />
+  </#if>
+  <#return value />
+</#function>
+
+<div class="display-list">
+	<ul class="list-group" id="search-results-display-list">
+		<#if entries?has_content>
+            <#list 0..searchContainer.getResults()?size-1 as i>
+                <#assign
+                    result                = searchContainer.getResults()[i]
+                    entry                 = entries[i]
+                    groupId               = result.getField("groupId").getValue()?number?long
+                    articleId             = result.getField("articleId").getValue()
+                    journalArticle        = journalArticleLocalService.getArticle(groupId, articleId)
+                    docXml                = saxReaderUtil.read(journalArticle.getContent())
+                    languageId            = languageUtil.getLanguageId(locale)
+                    scale                 = value_of(docXml, "Scale", languageId)
+                    score                 = value_of(docXml, "Score", languageId)
+                    description           = value_of(docXml, "Description", languageId)
+                    imageValue            = value_of(docXml, "Image", languageId)
+                />
+				<li class="list-group-item list-group-item-flex">
+					<#if !entry.isTemporarilyUnavailable()>
+						<div class="autofit-col">
+							<#if entry.isThumbnailVisible()>
+								<span class="sticker">
+									<span class="sticker-overlay">
+										<img
+											alt="${languageUtil.get(locale, "thumbnail")}"
+											class="sticker-img"
+											src="${entry.getThumbnailURLString()}"
+										/>
+									</span>
+								</span>
+							<#elseif entry.isUserPortraitVisible() && stringUtil.equals(entry.getClassName(), userClassName)>
+								<@liferay_ui["user-portrait"] userId=entry.getAssetEntryUserId() />
+							<#elseif entry.isIconVisible()>
+								<span class="sticker sticker-rounded sticker-secondary sticker-static">
+									<@clay.icon symbol="${entry.getIconId()}" />
+								</span>
+                            <#elseif !stringUtil.equals(imageValue, "")>
+                                <#assign
+                                    dlAppLocalServiceUtil = staticUtil["com.liferay.document.library.kernel.service.DLAppLocalServiceUtil"]
+                                    dlUtil                = staticUtil["com.liferay.document.library.kernel.util.DLUtil"]
+                                    thumbnail             = imageValue?eval
+                                    thumbnailUuid         = thumbnail.uuid
+                                    thumbnailGroupId      = thumbnail.groupId
+                                    thumbnailDlFile       = dlAppLocalServiceUtil.getFileEntryByUuidAndGroupId(thumbnailUuid, thumbnailGroupId?number)
+                                    thumbnailUrl          = dlUtil.getPreviewURL(thumbnailDlFile, thumbnailDlFile.getFileVersion(), themeDisplay, '')
+                                />
+                                <div class="post-thumb-frame d-flex overflow-hidden justify-content-center align-items-center" style="width: 50px;">
+                                    <img class="post-thumbs img-fluid" data-fileentryid="38853" src="${htmlUtil.escapeAttribute(thumbnailUrl)}">
+                                </div>
+                            <#else>
+                                <div style="width: 50px;"></div>
+							</#if>
+						</div>
+
+						<div class="autofit-col autofit-col-expand">
+							<section class="autofit-section">
+								<div class="list-group-title">
+									<a href="${entry.getViewURL()}">
+										${entry.getHighlightedTitle()}
+									</a>
+                                    <span class="list-group-subtext subtext-item">
+                                        ${description}
+                                    </span>
+								</div>
+								<div class="list-group-title">
+                                    Scale [${scale}] Score [${score}]
+								</div>
+                                <p class="list-group-subtext">
+                                    <#if entry.isCreatorVisible()>
+                                        <span class="subtext-item">
+                                            <strong>
+                                                ${htmlUtil.escape(entry.getCreatorUserName())}
+                                            </strong>
+                                        </span>
+                                    </#if>
+                                    <span class="subtext-item">
+                                        <@liferay.language key="on-date" />
+                                        ${journalArticle.getModifiedDate()?date?string['yyyy.MM.dd hh:mm:ss']}
+                                    </span>
+                                </p>
+
+                                <#if entry.isAssetCategoriesOrTagsVisible()>
+                                    <h6 class="search-document-tags text-default">
+                                        <@liferay_asset["asset-tags-summary"]
+                                            className=entry.getClassName()
+                                            classPK=entry.getClassPK()
+                                            paramName=entry.getFieldAssetTagNames()
+                                            portletURL=entry.getPortletURL()
+                                        />
+
+                                        <@liferay_asset["asset-categories-summary"]
+                                            className=entry.getClassName()
+                                            classPK=entry.getClassPK()
+                                            paramName=entry.getFieldAssetCategoryIds()
+                                            portletURL=entry.getPortletURL()
+                                        />
+                                    </h6>
+                                </#if>
+							</section>
+						</div>
+					<#else>
+						<div class="autofit-col">
+							<div class="alert alert-danger">
+								<@liferay.language_format
+									arguments="result"
+									key="is-temporarily-unavailable"
+								/>
+							</div>
+						</div>
+					</#if>
+				</li>
+			</#list>
+		</#if>
+	</ul>
+</div>
+
+<@liferay_aui.script use="aui-base">
+	A.one('#search-results-display-list').delegate(
+		'click',
+		function(event) {
+			var currentTarget = event.currentTarget;
+
+			currentTarget.siblings('.search-results-list').toggleClass('hide');
+		},
+		'.expand-details'
+	);
+</@liferay_aui.script>
