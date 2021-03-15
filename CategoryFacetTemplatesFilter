@@ -1,0 +1,158 @@
+<#function getHits categoryId>
+    <#assign counter = 0 />
+    
+    <#if entries?has_content>
+    	<#list entries as entry>
+    	    <#if (entry.getAssetCategoryId() == categoryId)>
+    	        <#assign counter = entry.getFrequency()/>
+    		</#if>
+    	</#list>
+    </#if>
+    <#return counter>
+</#function>
+
+<#function getSelectedStatus categoryId>
+    <#if entries?has_content>
+    	<#list entries as entry>
+    	    <#if (entry.getAssetCategoryId() == categoryId) && entry.isSelected()>
+                <#return "checked">
+    		</#if>
+    	</#list>
+    </#if>
+    <#if assetCategoriesSearchFacetDisplayContext.getParameterValues()?has_content>
+    	<#list assetCategoriesSearchFacetDisplayContext.getParameterValues() as parameterValue>
+    	    <#if (parameterValue?number == categoryId)>
+                <#return "checked">
+    		</#if>
+    	</#list>
+    </#if>
+    <#return "">
+</#function>
+
+
+<@liferay_ui["panel-container"]
+	extended=true
+>
+	<@liferay_ui.panel
+		collapsible=true
+		cssClass="search-facet"
+		id="${namespace + 'facetAssetCategoriesPanel'}"
+		markupView="lexicon"
+		persistState=true
+		title="Filter"
+	>
+        <#assign
+            VOCABULARY_IDs = [40503,41350,41355]
+            _AssetCategoryLocalService = serviceLocator.findService("com.liferay.asset.kernel.service.AssetCategoryLocalService") 
+            _AssetVocabularyLocalService = serviceLocator.findService("com.liferay.asset.kernel.service.AssetVocabularyLocalService") 
+        />
+        <#list VOCABULARY_IDs as VOCABULARY_ID>
+
+            <#assign
+                nodeId = -1 
+                vocabulary = _AssetVocabularyLocalService.getAssetVocabulary(VOCABULARY_ID) 
+            />
+            ${vocabulary.getName()}
+            <#if vocabulary?has_content>
+                <div id="treeview-checkable" class="treeview">
+                    <ul class="list-unstyled tag-cloud">
+                        <#list vocabulary.getCategories() as category>
+                            <#if category.isRootCategory()>
+                                <#assign nodeId++ />
+                                <li class="facet-value">
+                                    <div class="custom-checkbox custom-control">
+                                        <label class="facet-checkbox-label" for="${htmlUtil.escape(category.getName())}">
+                                            <input
+                                                class="custom-control-input facet-term"
+                                                data-term-id="${category.getCategoryId()}"
+                                                disabled
+                                                id="${htmlUtil.escape(category.getName())}"
+                                                name="${htmlUtil.escape(category.getName())}"
+                                                onChange="Liferay.Search.FacetUtil.changeSelection(event);"
+                                                type="checkbox"
+                                                ${getSelectedStatus(category.getCategoryId())}
+                                            />
+                        
+                                            <span class="custom-control-label term-name">
+                                                <span class="custom-control-label-text">${htmlUtil.escape(category.getName())}</span>
+                                            </span>
+                        
+                                            <small class="term-count">
+                                                (${getHits(category.getCategoryId())})
+                                            </small>
+                                        </label>
+                                    </div>
+                                </li>
+                                        
+                                <#list _AssetCategoryLocalService.getChildCategories(category.getCategoryId()) as subcategory>
+                                    <#assign nodeId++ />
+                                    <li class="facet-value" style="padding-left: 30px;">
+                                        <div class="custom-checkbox custom-control">
+                                            <label class="facet-checkbox-label" for="${htmlUtil.escape(subcategory.getName())}">
+                                                <input
+                                                    class="custom-control-input facet-term"
+                                                    data-term-id="${subcategory.getCategoryId()}"
+                                                    disabled
+                                                    id="${htmlUtil.escape(subcategory.getName())}"
+                                                    name="${htmlUtil.escape(subcategory.getName())}"
+                                                    onChange="Liferay.Search.FacetUtil.changeSelection(event);"
+                                                    type="checkbox"
+                                                    ${getSelectedStatus(subcategory.getCategoryId())}
+                                                />
+                            
+                                                <span class="custom-control-label term-name">
+                                                    <span class="custom-control-label-text">${htmlUtil.escape(subcategory.getName())}</span>
+                                                </span>
+                            
+                                                <small class="term-count">
+                                                    (${getHits(subcategory.getCategoryId())})
+                                                </small>
+                                            </label>
+                                        </div>
+                                    </li>
+
+                                    <#list _AssetCategoryLocalService.getChildCategories(subcategory.getCategoryId()) as subsubcategory>
+                                        <#assign nodeId++ />
+                                        <li class="facet-value" style="padding-left: 60px;">
+                                            <div class="custom-checkbox custom-control">
+                                                <label class="facet-checkbox-label" for="${htmlUtil.escape(subsubcategory.getName())}">
+                                                    <input
+                                                        class="custom-control-input facet-term"
+                                                        data-term-id="${subsubcategory.getCategoryId()}"
+                                                        disabled
+                                                        id="${htmlUtil.escape(subsubcategory.getName())}"
+                                                        name="${htmlUtil.escape(subsubcategory.getName())}"
+                                                        onChange="Liferay.Search.FacetUtil.changeSelection(event);"
+                                                        type="checkbox"
+                                                        ${getSelectedStatus(subsubcategory.getCategoryId())}
+                                                    />
+                                
+                                                    <span class="custom-control-label term-name">
+                                                        <span class="custom-control-label-text">${htmlUtil.escape(subsubcategory.getName())}</span>
+                                                    </span>
+                                
+                                                    <small class="term-count">
+                                                        (${getHits(subsubcategory.getCategoryId())})
+                                                    </small>
+                                                </label>
+                                            </div>
+                                        </li>
+                                    </#list>
+                                </#list>
+                            </#if>
+                        </#list>
+                    </ul>
+                </div>
+                <hr>
+            </#if>
+        </#list>
+
+		<#if !assetCategoriesSearchFacetDisplayContext.isNothingSelected()>
+			<@liferay_aui.button
+				cssClass="btn-link btn-unstyled facet-clear-btn"
+				onClick="Liferay.Search.FacetUtil.clearSelections(event);"
+				value="clear"
+			/>
+		</#if>
+	</@>
+</@>
