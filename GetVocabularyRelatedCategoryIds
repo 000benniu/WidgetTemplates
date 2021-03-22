@@ -1,0 +1,19 @@
+<#assign VOCABULARY_IDs = [40503,41350,41355] />
+
+<#function getCategoryIdsFromVocabulary VOCABULARY_IDs>
+    <#assign 
+        relatedCategoryIds = []
+        _AssetCategoryLocalService = serviceLocator.findService("com.liferay.asset.kernel.service.AssetCategoryLocalService") 
+        _AssetVocabularyLocalService = serviceLocator.findService("com.liferay.asset.kernel.service.AssetVocabularyLocalService") 
+    />
+    <#list VOCABULARY_IDs as VOCABULARY_ID>
+        <#assign vocabulary = _AssetVocabularyLocalService.getAssetVocabulary(VOCABULARY_ID) 
+        />
+        <#if vocabulary?has_content>
+            <#list vocabulary.getCategories() as category>
+                <#assign relatedCategoryIds += [category.getCategoryId()] />
+            </#list>
+        </#if>
+    </#list>
+    <#return relatedCategoryIds>
+</#function>
