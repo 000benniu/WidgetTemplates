@@ -17,3 +17,11 @@
     </#list>
     <#return relatedCategoryIds>
 </#function>
+
+
+
+
+
+<#list getCategoryIdsFromVocabulary(VOCABULARY_IDs) as catId>
+    ${catId}, 
+</#list>
