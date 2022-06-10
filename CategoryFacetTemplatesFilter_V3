@@ -1,9 +1,9 @@
 <#-- v3 -->
 <#assign COMPANY_ID = 20101 />
-<script type=“text/javascript”>
+<script type="text/javascript">
 function showHeading(vocabHeading) {
     var vocabHeadingElement = document.getElementById(vocabHeading);
-    vocabHeadingElement.classList.remove(“collapse”);
+    vocabHeadingElement.classList.remove("collapse");
 }
 </script>
 <#function getHits categoryId>
@@ -22,18 +22,18 @@ function showHeading(vocabHeading) {
     <#if entries?has_content>
     	<#list entries as entry>
     	    <#if (entry.getAssetCategoryId() == categoryId) && entry.isSelected()>
-                <#return “checked”>
+                <#return "checked">
     		</#if>
     	</#list>
     </#if>
     <#if assetCategoriesSearchFacetDisplayContext.getParameterValues()?has_content>
     	<#list assetCategoriesSearchFacetDisplayContext.getParameterValues() as parameterValue>
     	    <#if (parameterValue?number == categoryId)>
-                <#return “checked”>
+                <#return "checked">
     		</#if>
     	</#list>
     </#if>
-    <#return “”>
+    <#return "">
 </#function>
 
 <#function getRootCategories vocabulary>
@@ -49,25 +49,25 @@ function showHeading(vocabHeading) {
 <#macro getCategoriesAndHits categories paddingValue >
     <#if categories?has_content>
         <#list categories as category>
-            <script>showHeading(“${vocabHeading}“);</script>
-            <li class=“facet-value” style=“padding-left: ${paddingValue}mm”>
-                <div class=“custom-checkbox custom-control”>
-                    <label class=“facet-checkbox-label” for=“${namespace}_term_${category.getCategoryId()}“>
+            <script>showHeading("${vocabHeading}");</script>
+            <li class="facet-value" style="padding-left: ${paddingValue}mm">
+                <div class="custom-checkbox custom-control">
+                    <label class="facet-checkbox-label" for="${namespace}_term_${category.getCategoryId()}">
                         <input
                             ${getSelectedStatus(category.getCategoryId())}
-                            class=“custom-control-input facet-term”
-                            data-term-id=“${category.getCategoryId()}”
+                            class="custom-control-input facet-term"
+                            data-term-id="${category.getCategoryId()}"
                             disabled
-                            id=“${namespace}_term_${category.getCategoryId()}”
-                            name=“${namespace}_term_${category.getCategoryId()}”
-                            onChange=“Liferay.Search.FacetUtil.changeSelection(event);”
-                            type=“checkbox”
+                            id="${namespace}_term_${category.getCategoryId()}"
+                            name="${namespace}_term_${category.getCategoryId()}"
+                            onChange="Liferay.Search.FacetUtil.changeSelection(event);"
+                            type="checkbox"
                         />
-                        <span class=“custom-control-label term-name”>
-                            <span class=“custom-control-label-text”>${htmlUtil.escape(category.getName())}</span>
+                        <span class="custom-control-label term-name">
+                            <span class="custom-control-label-text">${htmlUtil.escape(category.getName())}</span>
                         </span>
 
-                        <small class=“term-count”>
+                        <small class="term-count">
                             (${getHits(category.getCategoryId())})
                         </small>
                     </label>
@@ -82,27 +82,27 @@ function showHeading(vocabHeading) {
     </#if>
 </#macro>
 
-<#assign assetCategoryLocalService = serviceLocator.findService(“com.liferay.asset.kernel.service.AssetCategoryLocalService”) />
-<#assign assetVocabularyLocalService = serviceLocator.findService(“com.liferay.asset.kernel.service.AssetVocabularyLocalService”) />
+<#assign assetCategoryLocalService = serviceLocator.findService("com.liferay.asset.kernel.service.AssetCategoryLocalService") />
+<#assign assetVocabularyLocalService = serviceLocator.findService("com.liferay.asset.kernel.service.AssetVocabularyLocalService") />
 <#assign vocabularies = assetVocabularyLocalService.getCompanyVocabularies(COMPANY_ID) />
 <#if vocabularies?has_content >
-    <@liferay_ui[“panel-container”]    extended=true id=“${namespace + ‘facetAssetCategoriesPanelContainer’}” markupView=“lexicon” persistState=true >
-        <@liferay_ui.panel collapsible=true  cssClass=“search-facet”   id=“${namespace + ‘facetAssetCategoriesPanel’}”   markupView=“lexicon” persistState=true title=“category” >
-            <ul class=“list-unstyled”>
+    <@liferay_ui["panel-container"] extended=true id="${namespace + 'facetAssetCategoriesPanelContainer'}" markupView="lexicon" persistState=true >
+        <@liferay_ui.panel collapsible=true cssClass="search-facet" id="${namespace + 'facetAssetCategoriesPanel'}" markupView="lexicon" persistState=true title="category" >
+            <ul class="list-unstyled">
                 <#list vocabularies as cur_Vocabulary>
                     <#assign rootCategories = getRootCategories(cur_Vocabulary) >
                     <#if rootCategories?has_content>
-                        <#assign vocabHeading = namespace + “_vocab_” + cur_Vocabulary?index/>
-                        <h6 id=“${vocabHeading}” class=“mt-3 collapse”>${cur_Vocabulary.getName()?capitalize}</h6>
+                        <#assign vocabHeading = namespace + "_vocab_" + cur_Vocabulary?index/>
+                        <h6 id="${vocabHeading}" class="mt-3 collapse">${cur_Vocabulary.getName()?capitalize}</h6>
                         <@getCategoriesAndHits rootCategories 0 />
                     </#if>
                 </#list>
             </ul>
             <#if !assetCategoriesSearchFacetDisplayContext.isNothingSelected()>
                 <@liferay_aui.button
-                    cssClass=“btn-link btn-unstyled facet-clear-btn”
-                    onClick=“Liferay.Search.FacetUtil.clearSelections(event);”
-                    value=“clear”
+                    cssClass="btn-link btn-unstyled facet-clear-btn"
+                    onClick="Liferay.Search.FacetUtil.clearSelections(event);"
+                    value="clear"
                 />
             </#if>
         </@>
